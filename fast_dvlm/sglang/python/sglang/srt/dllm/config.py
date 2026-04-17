@@ -36,7 +36,7 @@ class DllmConfig:
         elif model_config.hf_config.architectures[0] == "Fast_dLLM_QwenForCausalLM":
             block_size = 32
             mask_id = 151665
-        elif model_config.hf_config.architectures[0] == "Fast_dLLM_Qwen2_5_VLForConditionalGeneration":
+        elif model_config.hf_config.architectures[0] == "Fast_dVLMForConditionalGeneration":
             block_size = 32
             mask_id = 151665
         else:

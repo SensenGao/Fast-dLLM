@@ -644,6 +644,9 @@ class FastDVLMForConditionalGeneration(nn.Module):
         for name, loaded_weight in weights:
             if "rotary_emb.inv_freq" in name:
                 continue
+            name = name.replace("model.language_model.", "model.")
+            if name.startswith("model.visual."):
+                name = name[len("model."):]
 
             if self.pp_group.is_last_rank and "model.embed_tokens.weight" in name:
                 if "lm_head.weight" in params_dict:
@@ -737,6 +740,6 @@ class FastDVLMForConditionalGeneration(nn.Module):
 
 
 # Register with HuggingFace architecture name from config.json
-FastDVLMForConditionalGeneration.__name__ = "Fast_dLLM_Qwen2_5_VLForConditionalGeneration"
+FastDVLMForConditionalGeneration.__name__ = "Fast_dVLMForConditionalGeneration"
 
 EntryClass = FastDVLMForConditionalGeneration

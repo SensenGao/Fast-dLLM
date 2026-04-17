@@ -2,6 +2,12 @@
 
 import argparse
 import os
+import sys
+
+# Drop this script's dir from sys.path so `import sglang` resolves to the
+# installed package, not the local ./sglang source tree (a namespace pkg).
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path = [p for p in sys.path if os.path.abspath(p) != _HERE]
 
 ALGO_MAP = {
     "mdm": "HierarchyBlock",
@@ -32,8 +38,8 @@ def build_inputs(processor, image, prompt):
 def main():
     parser = argparse.ArgumentParser(description="Fast-dVLM sglang chatbot")
     parser.add_argument(
-        "--model-path", default="/vepfs/home/gaosensen/workspace/dvlm/Fast_dVLM",
-        help="Path to Fast_dVLM model checkpoint.",
+        "--model-path", default="Efficient-Large-Model/Fast_dVLM_3B",
+        help="HuggingFace model id or local path to Fast_dVLM checkpoint.",
     )
     parser.add_argument(
         "--processor-path", default="Qwen/Qwen2.5-VL-3B-Instruct",

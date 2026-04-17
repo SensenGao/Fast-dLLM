@@ -112,13 +112,52 @@ Commands in interactive mode:
 - `clear` - Clear conversation history
 - `exit` - Quit the chatbot
 
+## SGLang-Accelerated Inference
+
+Fast-dVLM ships with a customized SGLang fork that implements two dLLM algorithms:
+
+- **`HierarchyBlock`** — block-diffusion parallel decoding (MDM mode)
+- **`SpeculativeBlock`** — self-speculative block decoding (≈2.6× tokens/NFE)
+
+### Install
+
+```bash
+cd fast_dvlm/sglang/python
+pip install -e .
+```
+
+The install pulls in SGLang's native dependencies (flashinfer, sgl-kernel, transformers, etc.). Use a dedicated conda env to avoid version conflicts.
+
+### Command Line Chatbot (SGLang)
+
+```bash
+# MDM (HierarchyBlock)
+python run_chatbot_sglang.py --algorithm mdm --prompt "Describe this image." --image path/to/image.jpg
+
+# Speculative block decoding
+python run_chatbot_sglang.py --algorithm spec --prompt "Describe this image." --image path/to/image.jpg
+
+# Interactive mode
+python run_chatbot_sglang.py --algorithm spec --image path/to/image.jpg
+```
+
+Key flags:
+- `--algorithm {mdm,spec}` — select MDM (HierarchyBlock) or speculative decoding (SpeculativeBlock)
+- `--model-path` — HF id or local path (default `Efficient-Large-Model/Fast_dVLM_3B`)
+- `--processor-path` — HF processor for chat template + image preprocessing (default `Qwen/Qwen2.5-VL-3B-Instruct`)
+- `--max-tokens`, `--mem-fraction-static` — generation length / GPU memory budget
+
+If you hit a CuDNN/PyTorch 2.9 compatibility warning, set `SGLANG_DISABLE_CUDNN_CHECK=1` in the environment before launch.
+
 ## File Structure
 
 ```
 fast_dvlm/
 ├── README.md               # This file
 ├── requirements.txt        # Dependencies
-└── run_chatbot.py          # Command-line chatbot
+├── run_chatbot.py          # HF-backed command-line chatbot
+├── run_chatbot_sglang.py   # SGLang-backed chatbot (MDM + speculative)
+└── sglang/                 # Customized SGLang with Fast-dVLM model + dLLM algorithms
 ```
 
 ## Citation
