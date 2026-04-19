@@ -53,6 +53,12 @@ def main():
     parser.add_argument("--prompt", default=None, help="Text prompt. If omitted, enters interactive mode.")
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--mem-fraction-static", type=float, default=0.75)
+    parser.add_argument(
+        "--quantization", default=None,
+        choices=["w8a8_fp8"],
+        help="Quantization format of the checkpoint. Leave unset for BF16. "
+             "w8a8_fp8 requires SM89+ (4090 / L40 / H100 / H200).",
+    )
     args = parser.parse_args()
 
     os.environ.setdefault("SGLANG_DISABLE_CUDNN_CHECK", "1")
@@ -65,8 +71,7 @@ def main():
     processor.tokenizer = tokenizer
 
     dllm_algo = ALGO_MAP[args.algorithm]
-    print(f"Launching sglang Engine with dllm_algorithm={dllm_algo} ...")
-    engine = sgl.Engine(
+    engine_kwargs = dict(
         model_path=args.model_path,
         trust_remote_code=True,
         dtype="bfloat16",
@@ -79,6 +84,14 @@ def main():
         enable_metrics=True,
         mm_attention_backend="triton_attn",
     )
+    if args.quantization:
+        engine_kwargs["quantization"] = args.quantization
+
+    print(
+        f"Launching sglang Engine with dllm_algorithm={dllm_algo}"
+        f"{f', quantization={args.quantization}' if args.quantization else ''} ..."
+    )
+    engine = sgl.Engine(**engine_kwargs)
 
     sampling = {"max_new_tokens": args.max_tokens, "temperature": 0.0}
 

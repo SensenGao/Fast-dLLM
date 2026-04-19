@@ -19,12 +19,14 @@ from sglang.srt.layers.quantization.fp8_kernel import (
     is_fp8_fnuz,
     per_token_group_quant_fp8,
 )
+from sglang.srt.layers.quantization.compressed_tensors.utils import should_ignore_layer
 from sglang.srt.layers.quantization.fp8_utils import (
     apply_fp8_linear,
     cutlass_fp8_supported,
     input_to_float8,
     normalize_e4m3fn_to_e4m3fnuz,
 )
+from sglang.srt.layers.quantization.unquant import UnquantizedLinearMethod
 from sglang.srt.utils import set_weight_attrs
 
 if TYPE_CHECKING:
@@ -55,8 +57,9 @@ class W8A8Fp8Config(QuantizationConfig):
     - If CUTLASS is not supported: Falls back to per-tensor weight quantization
     """
 
-    def __init__(self, is_checkpoint_fp8_serialized: bool = False):
+    def __init__(self, is_checkpoint_fp8_serialized: bool = False, ignore: List[str] = None):
         self.is_checkpoint_fp8_serialized = is_checkpoint_fp8_serialized
+        self.ignore = ignore if ignore is not None else []
 
     @classmethod
     def get_supported_act_dtypes(cls) -> List[torch.dtype]:
@@ -80,7 +83,10 @@ class W8A8Fp8Config(QuantizationConfig):
         is_checkpoint_fp8_serialized = (
             "compressed-tensors" in quant_method or "w8a8_fp8" in quant_method
         )
-        return cls(is_checkpoint_fp8_serialized=is_checkpoint_fp8_serialized)
+        ignore = config.get("ignore", [])
+        if ignore is None:
+            ignore = []
+        return cls(is_checkpoint_fp8_serialized=is_checkpoint_fp8_serialized, ignore=ignore)
 
     def get_quant_method(
         self,
@@ -90,6 +96,8 @@ class W8A8Fp8Config(QuantizationConfig):
         from sglang.srt.layers.linear import LinearBase
         from sglang.srt.layers.moe.fused_moe_triton import FusedMoE
 
+        if should_ignore_layer(prefix, ignore=self.ignore):
+            return UnquantizedLinearMethod()
         if isinstance(layer, LinearBase):
             return W8A8Fp8LinearMethod(self)
         elif isinstance(layer, FusedMoE):

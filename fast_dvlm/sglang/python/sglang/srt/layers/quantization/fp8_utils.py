@@ -971,6 +971,7 @@ def apply_fp8_linear(
         else:
             cutlass_compatible_b = (
                 weight.shape[0] % 16 == 0 and weight.shape[1] % 16 == 0
+                and qinput.shape[0] >= 64  # TMA tile requires at least 64 rows
             )
             if not cutlass_compatible_b or use_triton_w8a8_fp8_kernel:
                 # Massage the input to be 2D
